@@ -1,0 +1,149 @@
+---
+title: "Milestone Report DS capstone"
+author: "Cristel Veefkind"
+date: "1/24/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Milestone report
+
+Started out with the Tweets, Blogs and News items. Only the English ones were used for the moment.
+Started out with using rWeka next to tm to create a Corpus and explore the data.
+Due to issues with the Java that is used by rWeka I moved to the Qanteda package to create some n-gram plots. The quanteda package is based on C and does not use java
+
+##Libraries used so far:
+```{r loading library, eval=T,echo=T}
+library(readtext)
+library(R.utils)
+library(tm)
+library(reshape2)
+library(ggplot2)
+library(dplyr)
+library(tidytext)
+library(quanteda)
+library(data.table)
+```
+
+Basic summary statistics
+Frist create one file with all information including number of words and lines
+In a later stadium I used a corpus to create n-grams but here I used readlines for reading the lines and a sum of the ntoken to count the words
+
+```{r loading data, eval=T,echo=T}
+conTw<- file("en_US/en_US.twitter.txt")
+conBl<- file("en_US/en_US.blogs.txt")
+conNe<- file("en_US/en_US.news.txt")
+lines_UStwitter<- readLines(con =conTw)
+lines_USblog<- readLines(con =conBl)
+lines_USnews<- readLines(con=conNe)
+EntriesNum<- c(length(lines_USblog),length(lines_USnews),length(lines_UStwitter))
+numwB<- sum(ntoken(lines_USblog))
+numN <- sum(ntoken(lines_USnews))
+numT <- sum(ntoken(lines_UStwitter))
+numW<- c(numwB,numN,numT)
+rm(numwB)
+rm(numN)
+rm(numT)
+data<- c(conBl,conNe,conTw)
+rm(conTw)
+rm(conBl)
+rm(ConNe)
+```
+
+When reading the twitter lines the following warnings pop up:
+Warning messages:
+1: In readLines(con = conTw) :
+  line 167155 appears to contain an embedded nul
+2: In readLines(con = conTw) :
+  line 268547 appears to contain an embedded nul
+3: In readLines(con = conTw) :
+  line 1274086 appears to contain an embedded nul
+4: In readLines(con = conTw) :
+  line 1759032 appears to contain an embedded nul
+
+##Summary of statistics
+```{r summary stat,eval=TRUE, echo=TRUE}
+files<-c("en_US/en_US_blogs.txt","en_US/en_US.news.txt","en_US/en_US.twitter.txt")
+data.frame(filename = files,fileSize = file.size(files),NumOfEntries = EntriesNum,NumOfWords = numW)
+```
+
+
+## The longest lines in the different sets
+```{r pressure,eval=FALSE, echo=TRUE}
+#max chars in a line
+maxCharTw<-which.max(nchar(lines_UStwitter))
+maxCharBl<-which.max(nchar(lines_USblog))
+maxCharNe<-which.max(nchar(lines_USnews))
+```
+
+Longest tweet/message/blog
+Blog: 483415
+News: 123628
+Tweet: 26
+
+
+## Create n-gram frequency tables/plots
+
+I used quanteda the functions but started of with a tm corpus. Somehow the qanteda corpus does not recognize
+a tm corpus but you can create a quanteda corpus using the corpus function.
+
+To get the ngram frequency tables I created a document feature matrix using dfm with the parameters to create only lowercase, remove stopworde and remow punctuation.
+
+To make the sets more easy to work with all the ngram (uni,bi and tri) sets were subsetted with all entries that occured more than 5 times.
+
+These were then used to create histograms of the frequencies
+
+```{r ngram freq,eval=TRUE, echo=TRUE}
+#qanteda corpus
+US_corpus<-Corpus(DirSource(directory="en_US"))
+qt_corpus<- corpus(US_corpus)
+rm(US_corpus)
+
+unigram <- dfm(qt_corpus, concatenator = " ", ngrams = 1,
+               tolower = TRUE, remove = stopwords("english"), remove_punct = TRUE)
+
+bigram <- dfm(qt_corpus, concatenator = " ", ngrams = 2,
+              tolower = TRUE, remove = stopwords("english"), remove_punct = TRUE)
+
+trigram <- dfm(qt_corpus, concatenator = " ", ngrams = 3,
+               tolower = TRUE, remove = stopwords("english"), remove_punct = TRUE)
+
+unigramF <- data.frame(ngram = unigram@Dimnames$features, frequency = colSums(unigram))
+unigramF <- subset(unigramF, frequency >= 5)
+unigramF <- arrange(unigramF, desc(frequency))
+
+bigramF <- data.frame(ngram = bigram@Dimnames$features, frequency = colSums(bigram))
+bigramF <- subset(bigramF, frequency >= 5)
+bigramF <- arrange(bigramF, desc(frequency))
+
+trigramF <- data.frame(ngram = trigram@Dimnames$features, frequency = colSums(trigram))
+trigramF <- subset(trigramF, frequency >= 5)
+trigramF <- arrange(trigramF, desc(frequency))
+
+rm(unigram)
+rm(bigram)
+rm(trigram)
+
+```
+
+##Plotting  the ngram frequencies for n=1,n=2 and n=3
+
+```{r histoplot,eval=TRUE, echo=TRUE }
+uniplot<-ggplot(unigramF[1:20,], aes(ngram, frequency)) + geom_bar(stat="identity")
+biplot<-ggplot(bigramF[1:15,], aes(ngram, frequency)) + geom_bar(stat="identity")
+triplot<-ggplot(trigramF[1:10,], aes(ngram, frequency)) + geom_bar(stat="identity")
+uniplot
+biplot
+triplot
+```
+##What to do further
+
+This is only the first exploratory phase of the project. Also a time to try out different methods and packages.
+The rWeka package did not work for me because of the java issues but the quanteda is also extremely slow so  I will haave to figure out how to deal with that.
+The ngrams will be the base for the model to be built that will predict the words.
+For the real model the corpus will be divided in a train and test set.
+Possibly there will be a bit more cleaning of the data.
+The ngrams will be the base for the model to be built that will predict the words.
