@@ -1,0 +1,34 @@
+---
+title: "EnglishWordPredictor"
+author: "Cristel Veefkind"
+date: "2/15/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This application is build for the Capstone project for the Datascience track on Coursera.
+A set of data was given (provided by swiftkey) to build a word-predictor.
+I have used a very small sample set for to build a model with the consequence that the prediction is not very accurate but reasonable in speed.
+Only a stupid mark off method is used with the highest ngram set to 4 for speed and size.
+There is a lot of room for improvement on the prediction model
+
+
+## How to use the app
+
+Type in a few words and the predicted words will appear in a table and in a wordcloud.
+You can choose how many predictions you would like to see as long as it is less than 20 words.
+The table also shows the prediction
+
+
+Note that there is a known bug in the app and that is that when you remove the words and take too long to type something an error will show up but will disappear as soon as you type text again.
+
+## Improvements
+1. samplesize: It will improve a lot as soon as the sample size of the training set is bigger
+2. use a Markov Chain model to improve the model. This uses a probability distribution to build a chain.
+3. build in that the model also generates a word from a half written word
+
